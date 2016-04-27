@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical" android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <TextView
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/listUsername"
+        android:layout_gravity="center_horizontal"
+        android:hint="user name"
+        android:gravity="left"
+        android:textStyle="bold"
+        android:layout_marginLeft="5dp"
+        android:layout_marginTop="5dp"
+        android:textSize="15dp" />
+
+    <TextView
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/listLocation"
+        android:layout_gravity="center_horizontal"
+        android:hint="Location"
+        android:gravity="left"
+        android:layout_marginLeft="10dp" />
+
+    <com.parse.ParseImageView
+        android:layout_width="fill_parent"
+        android:layout_height="300dp"
+        android:id="@+id/listImage"
+        android:layout_gravity="center_horizontal" />
+
+    <TextView
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/listCommon"
+        android:layout_gravity="center_horizontal"
+        android:hint="common name"
+        android:gravity="left"
+        android:layout_marginLeft="5dp" />
+
+    <TextView
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/listBotanical"
+        android:layout_gravity="center_horizontal"
+        android:hint="botanical name"
+        android:gravity="left"
+        android:layout_marginLeft="5dp" />
+
+    <TextView
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/listDescription"
+        android:layout_gravity="center_horizontal"
+        android:hint="description"
+        android:gravity="left"
+        android:textStyle="italic"
+        android:layout_marginLeft="10dp"
+        android:textColor="#1f26a0" />
+
+    <TextView
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/listComment"
+        android:hint="comment"
+        android:layout_gravity="center_horizontal"
+        android:clickable="true"
+        android:textColor="#8b30d4"
+        android:layout_marginLeft="5dp"
+        android:paddingLeft="10dp"
+        android:paddingTop="3dp"
+        android:paddingRight="10dp"
+        android:paddingBottom="10dp"
+        android:gravity="center" />
+
+</LinearLayout>

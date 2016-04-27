@@ -1,0 +1,17 @@
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:context="com.example.tracy.instaflora.MainActivity">
+    <item
+        android:id="@+id/logout"
+        android:title="Log out"
+        app:showAsAction="never" />
+    <item
+        android:id="@+id/settings"
+        android:title="Settings..."
+        app:showAsAction="never" />
+    <item
+        android:id="@+id/refresh"
+        android:title="Refresh"
+        app:showAsAction="always" />
+</menu>

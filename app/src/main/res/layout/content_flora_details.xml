@@ -1,0 +1,190 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    app:layout_behavior="@string/appbar_scrolling_view_behavior"
+    tools:context="com.example.tracy.instaflora.FloraDetails"
+    tools:showIn="@layout/activity_flora_details">
+
+    <ImageView
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"
+        android:id="@+id/showImage"
+        android:src="@drawable/applebloss"
+        android:scaleType="fitXY" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/labelCommon"
+        android:layout_alignParentTop="true"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="10dp"
+        android:layout_marginBottom="10dp"
+        android:text="Common Name:"
+        android:gravity="left"
+        android:layout_marginLeft="10dp" />
+
+    <TextView
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/textCommonName"
+        android:layout_below="@+id/labelCommon"
+        android:layout_centerHorizontal="true"
+        android:hint="Common Name"
+        android:layout_marginTop="10dp"
+        android:layout_marginBottom="10dp"
+        android:gravity="left"
+        android:textSize="15dp"
+        android:layout_marginLeft="30dp" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/labelBotanical"
+        android:layout_below="@+id/textCommonName"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="10dp"
+        android:layout_marginBottom="10dp"
+        android:text="Botanical Name:"
+        android:gravity="left"
+        android:layout_marginLeft="10dp" />
+
+    <TextView
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/textBotanicalName"
+        android:layout_below="@+id/labelBotanical"
+        android:layout_centerHorizontal="true"
+        android:hint="Botanical Name"
+        android:layout_marginTop="10dp"
+        android:layout_marginBottom="10dp"
+        android:gravity="left"
+        android:textSize="15dp"
+        android:layout_marginLeft="30dp" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/labelDescription"
+        android:layout_below="@+id/textBotanicalName"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="10dp"
+        android:layout_marginBottom="10dp"
+        android:text="Description:"
+        android:gravity="left"
+        android:layout_marginLeft="10dp" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/textDescription"
+        android:layout_centerHorizontal="true"
+        android:hint="Description"
+        android:layout_below="@+id/labelDescription"
+        android:layout_marginTop="10dp"
+        android:layout_marginBottom="10dp"
+        android:gravity="left"
+        android:textSize="15dp"
+        android:layout_marginLeft="30dp"
+        android:textColorHighlight="#1f26a0" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/textOwner"
+        android:layout_below="@+id/textDescription"
+        android:layout_centerHorizontal="true"
+        android:hint="Owner"
+        android:layout_marginTop="20dp"
+        android:layout_marginBottom="5dp"
+        android:textStyle="bold"
+        android:gravity="left"
+        android:textSize="20dp"
+        android:textIsSelectable="false"
+        android:layout_marginLeft="10dp" />
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/textCreatedDate"
+        android:layout_below="@+id/textOwner"
+        android:layout_centerHorizontal="true"
+        android:layout_marginBottom="10dp"
+        android:text="Created Date"
+        android:gravity="left"
+        android:layout_marginLeft="10dp" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/textLabel"
+        android:layout_below="@+id/textCreatedDate"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="10dp"
+        android:layout_marginBottom="5dp"
+        android:text="Location of Plant:"
+        android:gravity="left"
+        android:layout_marginLeft="10dp" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/textLocation"
+        android:layout_below="@+id/textLabel"
+        android:layout_centerHorizontal="true"
+        android:hint="location"
+        android:textStyle="italic"
+        android:gravity="left"
+        android:layout_marginLeft="25dp" />
+
+    <EditText
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/editCommonName"
+        android:visibility="invisible"
+        android:layout_below="@+id/labelCommon"
+        android:layout_alignLeft="@+id/textCommonName"
+        android:layout_alignStart="@+id/textCommonName"
+        android:layout_marginLeft="10dp"
+        android:inputType="textCapSentences|text"
+        android:nextFocusDown="@+id/editBotanicalName"/>
+
+    <EditText
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/editBotanicalName"
+        android:visibility="invisible"
+        android:gravity="left"
+        android:layout_below="@+id/labelBotanical"
+        android:layout_alignLeft="@+id/textBotanicalName"
+        android:layout_alignStart="@+id/textBotanicalName"
+        android:layout_marginLeft="10dp"
+        android:inputType="textCapSentences|text"
+        android:nextFocusDown="@+id/editDescription"/>
+
+    <EditText
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/editDescription"
+        android:visibility="invisible"
+        android:gravity="left"
+        android:layout_below="@+id/labelDescription"
+        android:layout_alignLeft="@+id/textDescription"
+        android:layout_alignStart="@+id/textDescription"
+        android:layout_marginLeft="10dp"
+        android:inputType="textCapSentences" />
+
+    <CheckBox
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Share on Insta Flora"
+        android:id="@+id/checkShare"
+        android:layout_below="@+id/textLocation"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentStart="true"
+        android:checked="false"
+        android:layout_marginTop="5dp" />
+
+</RelativeLayout>

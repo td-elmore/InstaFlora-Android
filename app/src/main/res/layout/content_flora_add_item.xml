@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:paddingBottom="@dimen/activity_vertical_margin"
+    android:paddingLeft="@dimen/activity_horizontal_margin"
+    android:paddingRight="@dimen/activity_horizontal_margin"
+    android:paddingTop="@dimen/activity_vertical_margin"
+    app:layout_behavior="@string/appbar_scrolling_view_behavior"
+    tools:context="com.example.tracy.instaflora.FloraAddItem"
+    tools:showIn="@layout/activity_flora_add_item">
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Plant Location"
+        android:id="@+id/textLabel"
+        android:layout_alignParentTop="true"
+        android:layout_toStartOf="@+id/checkShare"
+        android:gravity="center_horizontal"
+        android:layout_alignParentRight="true"
+        android:layout_alignParentEnd="true" />
+
+    <TextView
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:text="Location"
+        android:id="@+id/textLocation"
+        android:layout_below="@id/textLabel"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentStart="true"
+        android:textStyle="italic"
+        android:inputType="textMultiLine"
+        android:layout_marginTop="10dp"
+        android:gravity="center_horizontal"
+        android:layout_marginBottom="5dp" />
+
+    <ImageView
+        android:layout_width="@android:dimen/thumbnail_width"
+        android:layout_height="@android:dimen/thumbnail_height"
+        android:id="@+id/imageFlora"
+        android:src="@drawable/blossomtext"
+        android:layout_below="@+id/checkShare"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentStart="true" />
+
+    <EditText
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/editCommon"
+        android:layout_below="@+id/imageFlora"
+        android:layout_centerHorizontal="true"
+        android:hint="common name"
+        android:layout_marginTop="10dp"
+        android:gravity="left"
+        android:inputType="textCapSentences|text"
+        android:nextFocusDown="@+id/editBotanical"/>
+
+    <EditText
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/editBotanical"
+        android:layout_below="@id/editCommon"
+        android:layout_centerHorizontal="true"
+        android:hint="botanical name"
+        android:gravity="left"
+        android:inputType="textCapSentences|text"
+        android:nextFocusDown="@+id/editDescription"/>
+
+
+
+    <CheckBox
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Share on InstaFlora"
+        android:id="@+id/checkShare"
+        android:checked="false"
+        android:layout_below="@+id/textLocation"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentStart="true"
+        android:onClick="shareWarning" />
+
+
+    <EditText
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:ems="10"
+        android:id="@+id/editDescription"
+        android:hint="description"
+        android:layout_below="@+id/editBotanical"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentStart="true"
+        android:inputType="textCapSentences|textAutoCorrect" />
+
+
+
+</RelativeLayout>
