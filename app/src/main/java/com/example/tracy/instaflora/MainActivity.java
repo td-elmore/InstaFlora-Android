@@ -346,8 +346,17 @@ public class MainActivity extends AppCompatActivity {
 
         if (!parseInitialized) {
             ParseObject.registerSubclass(Flora.class);
-            Parse.enableLocalDatastore(this);
-            Parse.initialize(this);
+            //Parse.enableLocalDatastore(this);
+            // originally used in simplest form api.parse.com
+            // can no longer use their servers 5/4/2016
+            //Parse.initialize(this);
+            // api.parse.com APP_ID: 3OS3hHGLLZlOkiawSIDOTYGsva5eF6tQIfJ8Lua5
+            // api.parse.com CLIENT_KEY: H1LsY3nV4kMlPsNu5AoZxubRo76MWPG3vreO80eH
+            Parse.initialize(new Parse.Configuration.Builder(this)
+                            .enableLocalDataStore()
+                            .server("http://instaflora.herokuapp.com/parse/")
+                            .build()
+            );
             parseInitialized = true;
         }
     }
