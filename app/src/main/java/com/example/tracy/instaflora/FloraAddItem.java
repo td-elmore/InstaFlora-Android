@@ -5,6 +5,7 @@ import android.content.Intent;
 import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Matrix;
 import android.location.Criteria;
 import android.location.Location;
 import android.location.LocationListener;
@@ -39,6 +40,8 @@ import com.parse.SaveCallback;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -64,7 +67,8 @@ public class FloraAddItem extends AppCompatActivity implements LocationListener 
     // chosen by selection on the Map: FloraLocation.class
     static boolean locationChosen = false;
 
-    // image file name saved to device
+    // path to image file saved to device
+    // whenever a picture is taken right now, or retrieved from gallery
     String imageFile = "";
 
     // activity imgView can be clicked and
@@ -349,7 +353,7 @@ public class FloraAddItem extends AppCompatActivity implements LocationListener 
 
                 if (location == null) {
                     // set to UC Berkeley Botanical Gardens coordinates temporarily
-                    // in case the current location isn't readily known
+                    // when the current location isn't readily known
                     lat = 37.875612;
                     lng = -122.238690;
                 } else {
@@ -414,6 +418,38 @@ public class FloraAddItem extends AppCompatActivity implements LocationListener 
                 break;
         }
         return super.onOptionsItemSelected(item);
+    }
+
+    /* rotatePicNinety()
+     * on some devices the pictures comes in rotated wrong, allow
+     * user to rotate the picture manually if needed.
+     */
+    public void rotatePicNinety(View view) throws FileNotFoundException {
+
+        if (imgView == null) {
+            /* toast? can't rotate an image until one has been chosen, :P */
+            return;
+        }
+
+        Bitmap bitmapOrg = BitmapFactory.decodeFile(imageFile);
+
+        Matrix matrix = new Matrix();
+        matrix.postRotate(90.0f);
+
+        Bitmap rotatedBitmap = Bitmap.createBitmap(bitmapOrg, 0, 0, bitmapOrg.getWidth(), bitmapOrg.getHeight(), matrix, true);
+
+        /* save new bitmap to image file */
+        FileOutputStream imgStream = new FileOutputStream(imageFile);
+        rotatedBitmap.compress(Bitmap.CompressFormat.PNG, 100, imgStream);
+        try {
+            imgStream.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+            MainActivity.instaLog(e.getMessage());
+        }
+
+        /* change the view of the bitmap on the thumbnail */
+        setImagePic();
     }
 
     /*

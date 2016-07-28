@@ -94,6 +94,16 @@
         android:layout_alignParentStart="true"
         android:inputType="textCapSentences|textAutoCorrect" />
 
+    <Button
+        style="?android:attr/buttonStyleSmall"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Rotate 90°"
+        android:id="@+id/buttonRotate"
+        android:layout_alignBottom="@+id/imageFlora"
+        android:layout_alignRight="@+id/editCommon"
+        android:layout_alignEnd="@+id/editCommon"
+        android:onClick="rotatePicNinety" />
 
 
 </RelativeLayout>
