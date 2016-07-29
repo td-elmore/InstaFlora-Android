@@ -423,6 +423,8 @@ public class FloraAddItem extends AppCompatActivity implements LocationListener 
     /* rotatePicNinety()
      * on some devices the pictures comes in rotated wrong, allow
      * user to rotate the picture manually if needed.
+     *
+     * this rotate updates the thumbnail very slowly on the MotoG
      */
     public void rotatePicNinety(View view) throws FileNotFoundException {
 
