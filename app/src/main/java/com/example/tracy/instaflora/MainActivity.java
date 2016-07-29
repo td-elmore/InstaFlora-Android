@@ -416,12 +416,6 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
                 Intent loginIntent = new Intent(this, FloraParseLogin.class);
                 startActivity(loginIntent);
                 return true;
-            case R.id.refresh:
-                if (loadFloraPending) {
-                    loadFloraData();
-                }
-                showCurrentFlora();
-                return true;
             case R.id.settings:
                 Intent settingsIntent = new Intent(this, FloraSettings.class);
                 startActivityForResult(settingsIntent, RESULT_FLORA_SETTINGS);
@@ -436,6 +430,10 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
         new Handler().postDelayed(new Runnable() {
             @Override public void run() {
                 swipeLayout.setRefreshing(false);
+                if (loadFloraPending) {
+                    loadFloraData();
+                }
+                showCurrentFlora();
             }
         }, 5000);
     }
