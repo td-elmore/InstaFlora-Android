@@ -556,7 +556,7 @@ public class FloraAddItem extends AppCompatActivity implements LocationListener 
                 @Override
                 public void done(ParseException e) {
                     if (e == null) {
-                        Toast.makeText(getApplicationContext(), "Save successful! Click Refresh.", Toast.LENGTH_LONG).show();
+                        Toast.makeText(getApplicationContext(), "Save successful! Pull down to refresh.", Toast.LENGTH_LONG).show();
                         bitmapData.recycle();
                         MainActivity.loadFloraPending = true;
                     } else {
