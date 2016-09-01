@@ -2,6 +2,7 @@ package com.example.tracy.instaflora;
 
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -386,8 +387,12 @@ public class FloraAddItem extends AppCompatActivity implements LocationListener 
             latFromMap = lat;
             lngFromMap = lng;
         }
+
         TextView textView = (TextView) findViewById(R.id.textLocation);
-        MainActivity.setLocationDescription(this, textView, lat, lng);
+        if (!MainActivity.setLocationDescription(this, textView, latFromMap, lngFromMap)) {
+            String tempText = "latitude: " + latFromMap + " longitude: " + lngFromMap;
+            textView.setText(tempText);
+        }
     }
 
     @Override
@@ -402,9 +407,10 @@ public class FloraAddItem extends AppCompatActivity implements LocationListener 
         int id = item.getItemId();
         switch (id) {
             case R.id.save_item:
-                enterNewFloraItem();
-                setResult(RESULT_OK);
-                finish();
+                if (enterNewFloraItem()) {
+                    setResult(RESULT_OK);
+                    finish();
+                }
                 return true;
             case R.id.locate:
                 changeLocation();
@@ -466,16 +472,16 @@ public class FloraAddItem extends AppCompatActivity implements LocationListener 
      *
      * when the action is aborted a Toast() is called to inform the user
      */
-    public void enterNewFloraItem() {
+    public boolean enterNewFloraItem() {
 
-        String commonName = "Unknown Common Name";
-        String botanicalName = "Unknown Botanical Name";
-        String description = "No extra information";
-        String placeName = "Unknown Location";
+        final String commonName;
+        final String botanicalName;
+        final String description;
+        final String placeName;
 
         if (imageFile == null || imageFile.length() == 0) {
             Toast.makeText(getApplicationContext(), "Take a picture by clicking on the apple blossom", Toast.LENGTH_LONG).show();
-            return;
+            return false;
         }
 
         EditText editCommonName = (EditText) findViewById(R.id.editCommon);
@@ -485,18 +491,26 @@ public class FloraAddItem extends AppCompatActivity implements LocationListener 
 
         if (editCommonName.length() > 0) {
             commonName = editCommonName.getText().toString();
+        } else {
+            commonName = "";
         }
 
         if (editBotanicalName.length() > 0) {
             botanicalName = editBotanicalName.getText().toString();
+        } else {
+            botanicalName = "";
         }
 
         if (editDescription.length() > 0) {
             description = editDescription.getText().toString();
+        } else {
+            description = "";
         }
 
         if (locationName.length() > 0) {
             placeName = locationName.getText().toString();
+        } else {
+            placeName = "";
         }
 
         // save flower to Parse
@@ -533,7 +547,7 @@ public class FloraAddItem extends AppCompatActivity implements LocationListener 
             scaledBitmap.compress(Bitmap.CompressFormat.PNG, 100, stream);
         }
 
-        byte[] byteArray = stream.toByteArray();
+        final byte[] byteArray = stream.toByteArray();
 
         ParseFile file = new ParseFile(Flora.FLORA_IMAGE_NAME, byteArray);
 
@@ -547,33 +561,80 @@ public class FloraAddItem extends AppCompatActivity implements LocationListener 
             flora.setACL(new ParseACL(ParseUser.getCurrentUser()));
         }
 
-        // only attempt to save if there is an internet connection
-        ConnectivityManager cm = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
-        NetworkInfo ni = cm.getActiveNetworkInfo();
-        if ((ni != null) && ni.isConnected()) {
+        // only attempt to saveInBackground() if there is an internet connection
+        if (MainActivity.isNetworkConnected()) {
             flora.setImageFile(file);
             flora.saveInBackground(new SaveCallback() {
                 @Override
                 public void done(ParseException e) {
                     if (e == null) {
-                        Toast.makeText(getApplicationContext(), "Save successful! Pull down to refresh.", Toast.LENGTH_LONG).show();
                         bitmapData.recycle();
-                        MainActivity.loadFloraPending = true;
                     } else {
-                        Toast.makeText(getApplicationContext(), "Unable to save this plant.", Toast.LENGTH_LONG).show();
+                        Toast.makeText(getApplicationContext(), "Unable to save.", Toast.LENGTH_LONG).show();
                     }
                 }
             });
         } else {
-            // if no internet connection is detected, inform the user
-            Toast.makeText(this, "No internet connection, entry cannot be saved", Toast.LENGTH_LONG).show();
-            // TODO: use imageFile, and objectId to save image for later and saveEventually()
+            // saveEventually()&pin() caches the object but fails for ParseFile (image)
+            // create a local file to retrieve and upload later when connectivity is restored
+            String localFileName;
+            localFileName = saveImgByteArray(byteArray);
+
+            // saveEventually() also pins the object so it shows up in the
+            // listView so users can view their added items until connectivity returns
+            flora.setDeviceImgName(localFileName);
+            flora.saveEventually(new SaveCallback() {
+                @Override
+                public void done(ParseException e) {
+                    if (e == null) {
+                        bitmapData.recycle();
+                    }
+                }
+            });
+
+            // when there is an attempt to save, always assume
+            // there are images waiting to be uploaded,
+            // saveEventually() might not come back.
+            MainActivity.imagesPending = true;
+
+            // save to preferences in case InstaFlora is shut down before connection is restored
+            SharedPreferences sharedPreferences;
+            sharedPreferences = this.getSharedPreferences("com.tzlandscapedesign.instaflora", Context.MODE_PRIVATE);
+            if (sharedPreferences != null) {
+                sharedPreferences.edit().putBoolean("imagesPending", true).apply();
+            }
         }
 
         // garbage collect after loading bitmaps etc...
         System.gc();
         // reset the location
         locationChosen = false;
+        return true;
+    }
+
+    String saveImgByteArray(byte[] byteArray) {
+        // saves a copy of the smaller file in case it has not yet been
+        // added to the Parse cloud
+
+        String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(new Date());
+        String localFile = "PNG_" + timeStamp + ".png";
+
+        FileOutputStream localStream;
+
+        try {
+            localStream = getApplicationContext().openFileOutput(localFile, 0);
+            localStream.write(byteArray, 0, byteArray.length);
+            localStream.close();
+        } catch (FileNotFoundException e) {
+            Toast.makeText(getApplicationContext(), e.getMessage(), Toast.LENGTH_LONG).show();
+            e.printStackTrace();
+        } catch (IOException e) {
+            Toast.makeText(getApplicationContext(), e.getMessage(), Toast.LENGTH_LONG).show();
+            e.printStackTrace();
+        }
+
+        MainActivity.instaLog("saveImgByteArray: locaFile = " + localFile);
+        return localFile;
     }
 
     /*
