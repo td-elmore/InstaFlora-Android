@@ -13,6 +13,8 @@ import com.parse.ParseFile;
 import com.parse.ParseImageView;
 import com.parse.ParseQueryAdapter;
 
+import java.io.File;
+
 /**
  * Created by Tracy on 2/29/2016.
  */
@@ -27,31 +29,32 @@ public class LargePhotoParseQueryAdapter extends ParseQueryAdapter<Flora> {
     public View getItemView(Flora flora, View v, ViewGroup parent) {
         //return super.getItemView(object, v, parent);
 
-        Drawable placeholder = null;
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) {
-            placeholder = getContext().getDrawable(R.drawable.waitcircle);
-        }
-
         if (v == null) {
             v = View.inflate(getContext(), R.layout.large_photo_layout, null);
         }
 
         super.getItemView(flora, v, parent);
 
+        Drawable placeholder = null;
+        ParseFile photoFile = flora.getImageFile();
+
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) {
+            if (photoFile != null) {
+                placeholder = getContext().getDrawable(R.drawable.waitcircle);
+            } else {
+                placeholder = getContext().getDrawable(R.drawable.waitforconn);
+            }
+        }
         ParseImageView floraImage = (ParseImageView) v.findViewById(R.id.listImage);
         if (placeholder != null) {
             floraImage.setPlaceholder(placeholder);
         }
 
-        ParseFile photoFile = flora.getImageFile();
         if (photoFile != null) {
             floraImage.setParseFile(photoFile);
-            floraImage.loadInBackground(new GetDataCallback() {
-                @Override
-                public void done(byte[] data, ParseException e) {
-                    // nothing to do
-                }
-            });
+            floraImage.loadInBackground();
+        } else {
+            floraImage.setParseFile(null);
         }
 
         String botanical;
