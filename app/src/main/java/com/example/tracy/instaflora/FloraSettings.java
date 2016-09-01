@@ -47,7 +47,7 @@ public class FloraSettings extends AppCompatActivity {
         fab.hide();
 
         // retrieve the sharedPreferences pointer to save at the end
-        sharedPreferences = this.getSharedPreferences("com.example.tracy.instaflora", Context.MODE_PRIVATE);
+        sharedPreferences = this.getSharedPreferences("com.tzlandscapedesign.instaflora", Context.MODE_PRIVATE);
         privateBox = (CheckBox) findViewById(R.id.checkPrivateOnly);
 
         String loggedInAs;
