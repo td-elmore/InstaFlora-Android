@@ -90,6 +90,18 @@ public class Flora extends ParseObject {
         return getParseFile("image");
     }
 
+    public void setDeviceImgName(String deviceImgName) {
+        put("deviceImgName", deviceImgName);
+    }
+
+    public void deleteDeviceImgName() {
+        remove("deviceImgName");
+    }
+
+    public String getDeviceImgName() {
+        return getString("deviceImgName");
+    }
+
     public void setFloraLocation(ParseGeoPoint pt) {
         put("location", pt);
     }
