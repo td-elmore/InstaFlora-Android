@@ -32,6 +32,7 @@ import com.parse.DeleteCallback;
 import com.parse.FindCallback;
 import com.parse.Parse;
 import com.parse.ParseException;
+import com.parse.ParseFile;
 import com.parse.ParseGeoPoint;
 import com.parse.ParseObject;
 import com.parse.ParseQuery;
@@ -39,6 +40,10 @@ import com.parse.ParseQueryAdapter;
 import com.parse.ParseUser;
 import com.parse.SaveCallback;
 
+import java.io.File;
+import java.io.FileDescriptor;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.List;
 
@@ -56,8 +61,7 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
     static boolean privateOnly = false;
 
     // set in FloraAddItem Activity when save is finished
-    static boolean loadFloraPending = false;
-    static boolean showFloraPending = true;
+    static boolean imagesPending = false;
 
     // result codes from outside activities
     static final int RESULT_FLORA_SETTINGS = 4;
@@ -70,8 +74,8 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
     // Current location to keep updated if allFlora = false.
     LocationManager locationManager;
     String provider;
-    double currentLat;
-    double currentLng;
+    double currentLat = 0.0;
+    double currentLng = 0.0;
 
     // use standard swipe to refresh the listview
     SwipeRefreshLayout swipeLayout;
@@ -111,10 +115,8 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
 
             Intent i = new Intent(this, FloraParseLogin.class);
             startActivity(i);
-            loadFloraPending = true;
 
         } else {
-            showCurrentFlora();
             loadFloraData();
         }
     }
@@ -124,80 +126,214 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
         super.onResume();
 
         updateLocation();
-        if (loadFloraPending) {
-            loadFloraData();
-        }
-        showCurrentFlora();
+        loadFloraData();
+
+    }
+
+    static public boolean isNetworkConnected() {
+        Runtime runtime = Runtime.getRuntime();
+        try {
+
+            Process ipProcess = runtime.exec("/system/bin/ping -c 1 8.8.8.8");
+            int     exitValue = ipProcess.waitFor();
+            return (exitValue == 0);
+
+        } catch (IOException e)          { e.printStackTrace(); }
+        catch (InterruptedException e) { e.printStackTrace(); }
+
+        return false;
+        /* -- was using, but will give true also when internet is available,
+         * but not connected.
+        ConnectivityManager cm = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo ni = cm.getActiveNetworkInfo();
+
+        if ((ni != null) && ni.isConnected())
+         */
     }
 
     /*
      * loadFloraData()
      *
      * sets up the data store on startup
-     * and after the settings or location have changed.
+     * and after the settings or location have changed, this
+     * is the main refresh function and handles the logic
+     * for what happens when the network is connected and
+     * when the connection has come back up.
      */
     public void loadFloraData() {
 
-        ConnectivityManager cm = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
-        NetworkInfo ni = cm.getActiveNetworkInfo();
+        if (isNetworkConnected()) {
 
-        if ((ni != null) && ni.isConnected()) {
+            if (imagesPending) {
+                loadMissingImages();
+            } else {
+                refreshFloraList(false);
+            }
 
-            // first delete any items that may already be in the local datastore
-            // this information is now old if you are calling loadFloraData()
-            ParseObject.unpinAllInBackground(new DeleteCallback() {
+        } else {
+            Toast.makeText(this, "No internet connection is available.", Toast.LENGTH_LONG).show();
+            // if there is no internet activity,
+            // show in the list view what is currently in the local datastore
+            showCurrentFlora();
+        }
+    }
+
+    /*
+     * pinDataStoreFloras()
+     *
+     * boolean fromDatastore, true to get items saved in the cache,
+     * or false if a network connection is available to get the
+     * current data from the server
+     *
+     */
+    public void pinFloras(boolean fromDataStore) {
+        // use the current query to fill the local datastore and
+        // refresh the adapter view
+        ParseQuery<Flora> query = ParseQuery.getQuery("Flora");
+
+        if (!allFlora) {
+            instaLog("pinDataStoreFloras: !allFlora, rangeMiles= " + rangeMiles);
+            query.whereWithinMiles("location", new ParseGeoPoint(currentLat, currentLng), rangeMiles);
+        } else if (privateOnly) {
+            instaLog("pinDataStoreFloras: privateOnly, username = " + ParseUser.getCurrentUser().getUsername());
+            query.whereEqualTo("username", ParseUser.getCurrentUser().getUsername());
+        }
+
+        if (fromDataStore) {
+            instaLog("pinFloras: localDatastore()");
+            query.fromLocalDatastore().findInBackground(new FindCallback<Flora>() {
                 @Override
-                public void done(ParseException e) {
-
+                public void done(List<Flora> floras, ParseException e) {
                     if (e != null) {
-                        instaLog("unpin failed " + e.getMessage());
+                        instaLog("pinFloras: cannot load floras: " + e.getMessage());
                         return;
                     }
-                    // when that is done, use the current query to fill the local datastore and
-                    // refresh the adapter view
-                    ParseQuery<Flora> query = ParseQuery.getQuery("Flora");
-
-                    if (!allFlora) {
-                        query.whereWithinMiles("location", new ParseGeoPoint(currentLat, currentLng), rangeMiles);
-                    } else if (privateOnly) {
-                        query.whereEqualTo("username", ParseUser.getCurrentUser().getUsername());
-                    }
-
-                    query.findInBackground(new FindCallback<Flora>() {
-                        @Override
-                        public void done(List<Flora> floras, ParseException e) {
-                            if (e != null) {
-                                instaLog("cannot load floras: "+ e.getMessage());
-                                return;
+                    // pin the newly queried items.
+                    ParseObject.pinAllInBackground(floras, new SaveCallback() {
+                        public void done(ParseException e) {
+                            if (e == null) {
+                                MainActivity.instaLog("pinFloras: pinAllInBackground() success");
+                                showCurrentFlora();
+                            } else {
+                                MainActivity.instaLog("pinFloras: Error pinning list items " + e.getMessage());
                             }
+                        }
+                    });
+                }
+            });
+        } else {
+            query.findInBackground(new FindCallback<Flora>() {
+                @Override
+                public void done(List<Flora> floras, ParseException e) {
+                    if (e != null) {
+                        instaLog("pinFloras: cannot load floras: " + e.getMessage());
+                        return;
+                    }
+                    // pin the newly queried items.
+                    ParseObject.pinAllInBackground(floras, new SaveCallback() {
+                        public void done(ParseException e) {
+                            if (e == null) {
+                                MainActivity.instaLog("pinFloras: pinAllInBackground() success");
+                                showCurrentFlora();
+                            } else {
+                                MainActivity.instaLog("pinFloras: Error pinning list items " + e.getMessage());
+                            }
+                        }
+                    });
+                }
+            });
+        }
+    }
 
-                            ParseObject.pinAllInBackground(floras, new SaveCallback() {
+
+    /*
+     * refreshFloraList()
+     *
+     * unpins all the items in the cached list and refills the cache
+     * using the current query (from Settings)
+     * -- called only if there is a reliable internet connection
+     */
+    void refreshFloraList(final boolean fromLocalDatastore) {
+        // first delete items in the local datastore
+        // this information is now old
+        ParseObject.unpinAllInBackground(new DeleteCallback() {
+            @Override
+            public void done(ParseException e) {
+
+                if (e != null) {
+                    instaLog("refreshFloraList: unpin failed " + e.getMessage());
+                    return;
+                }
+
+                pinFloras(fromLocalDatastore);
+            }
+        });
+
+    }
+
+    /*
+     * loadMissingImages()
+     *
+     * retrieves images that have been saved when FloraAddItem() didn't have
+     * a reliable internet connection.
+     * -- called only when there is a reliable internet connection!!!
+     */
+    void loadMissingImages() {
+
+        ParseQuery<Flora> query = ParseQuery.getQuery("Flora");
+
+        // using the current query, get all pinned data
+        if (!allFlora) {
+            query.whereWithinMiles("location", new ParseGeoPoint(currentLat, currentLng), rangeMiles);
+        } else if (privateOnly) {
+            query.whereEqualTo("username", ParseUser.getCurrentUser().getUsername());
+        }
+
+        query.findInBackground(new FindCallback<Flora>() {
+            @Override
+            public void done(List<Flora> floras, ParseException e) {
+                if (e != null) {
+                    instaLog("loadFloraData: cannot load floras: " + e.getMessage());
+                    return;
+                }
+                // check to see if any are missing their ParseFile (png image)
+                for (Flora flora : floras) {
+                    if (flora.getImageFile() == null) {
+                        String deviceImgName = flora.getDeviceImgName();
+                        if (deviceImgName.length() > 0) {
+                            instaLog("loadMissingImages: " + deviceImgName);
+
+                            final File imgFile = new File(getApplicationContext().getFilesDir(), deviceImgName);
+                            ParseFile newParseFile = new ParseFile(imgFile);
+
+                            flora.deleteDeviceImgName();
+                            flora.setImageFile(newParseFile);
+                            flora.saveInBackground(new SaveCallback() {
+                                @Override
                                 public void done(ParseException e) {
                                     if (e == null) {
-                                        if (!isFinishing()) {
-                                            pqAdapter.loadObjects();
-                                        }
-                                        MainActivity.instaLog("pinAllInBackground() success");
+                                        instaLog("loadMissingImages: success, saving flora image.");
+                                        imgFile.delete();
                                     } else {
-                                        MainActivity.instaLog("Error pinning list items " + e.getMessage());
+                                        instaLog("loadMissingImages: unsuccessful, " + e.getMessage());
                                     }
+                                    refreshFloraList(false);
                                 }
                             });
                         }
-                    });
-                    showFloraPending = true;
+                    }
                 }
-            });
-
-        } else {
-            Toast.makeText(this, "No internet access. Click REFRESH when connection is available", Toast.LENGTH_LONG).show();
-            // if there is not internet activity, just load what is currently in the local datastore
-            if (pqAdapter != null) {
-                pqAdapter.loadObjects();
+                imagesPending = false;
+                turnOffImagesPending();
             }
-            // when the user refreshes, this tries again
-            loadFloraPending = true;
-        }
+        });
+    }
+
+    public void turnOffImagesPending() {
+        SharedPreferences sharedPreferences;
+
+        sharedPreferences = this.getSharedPreferences("com.tzlandscapedesign.instaflora", Context.MODE_PRIVATE);
+        sharedPreferences.edit().putBoolean("imagesPending", false).apply();
     }
 
     /*
@@ -208,33 +344,49 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
      */
     public void updateLocation() {
 
-        if (!allFlora) {
-            locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
-            provider = locationManager.getBestProvider(new Criteria(), true);
+        SharedPreferences sharedPreferences;
 
-            Location location = locationManager.getLastKnownLocation(provider);
-            if (location == null) {
-                // dummy location to use for emulator or other stubborn devices
-                // set to UCBerkeley Botanical Gardens
-                currentLat = 37.875612;
-                currentLng = -122.238690;
-            } else {
-                currentLat = location.getLatitude();
-                currentLng = location.getLongitude();
-            }
-        } else {
-            currentLat = 0.0;
-            currentLng = 0.0;
+        sharedPreferences = this.getSharedPreferences("com.tzlandscapedesign.instaflora", Context.MODE_PRIVATE);
+
+        // if the gps system is delayed or not working for some reason
+        // this sets the default to the UC Berkeley Botanical Garden, Berkeley, CA USA
+        // hopefully, though, the most recent gps location has been saved
+        long lat = Double.doubleToLongBits(37.875612);
+        long lng = Double.doubleToLongBits(-122.238690);
+        lng = sharedPreferences.getLong("longitude", lng);
+        lat = sharedPreferences.getLong("latitude", lat);
+        currentLng = Double.longBitsToDouble(lng);
+        currentLat = Double.longBitsToDouble(lat);
+
+        locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+        provider = locationManager.getBestProvider(new Criteria(), true);
+        instaLog("updateLocation: provider: " + provider);
+
+        Location location = locationManager.getLastKnownLocation(provider);
+        if (location != null) {
+            instaLog("updateLocation: success getting location!");
+            currentLat = location.getLatitude();
+            currentLng = location.getLongitude();
+
+            // save the current location for use later
+            lat = Double.doubleToLongBits(currentLat);
+            lng = Double.doubleToLongBits(currentLng);
+            sharedPreferences.edit().putLong("longitude", lng).apply();
+            sharedPreferences.edit().putLong("latitude", lat).apply();
         }
     }
+
 
     /*
      * Used in FloraAddItem to show a description of the location based on the
      * longitude and latitude in the TextView provided. Ensures that the description
       * is uniform throughout the App.
-      * TODO: put this in another thread
      */
-    static public void setLocationDescription(Context context, TextView textView, double lat, double lng) {
+    static public boolean setLocationDescription(Context context, TextView textView, double lat, double lng) {
+
+        if (!isNetworkConnected()) {
+            return false;
+        }
 
         String addressText = "";
         Geocoder geocoder = new Geocoder(context);
@@ -262,25 +414,25 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
             }
         } catch (IOException e) {
             e.printStackTrace();
+            return false;
         }
+        return true;
+    }
 
+    public void updateListView(){
+        instaLog("updateListView()");
+        if (pqAdapter != null) {
+            pqAdapter.loadObjects();
+        }
     }
 
     /*
-     * showCurrentFlora() is called any time an update to the ListView is needed
-     * it retrieves entries from the local data store which is filled at startup
-     * and when settings are changed
+     * showCurrentFlora() is called to initialize the pqAdapter
      */
     public void showCurrentFlora() {
 
+        instaLog("showCurrentFlora()");
         ListView listView = (ListView) findViewById(R.id.listView);
-
-        // if pqAdapter is already initialized and the data in the
-        // data store has not changed, then refresh the data
-        if (pqAdapter != null && !showFloraPending) {
-            pqAdapter.loadObjects();
-            return;
-        }
 
         pqAdapter = new LargePhotoParseQueryAdapter(this, new ParseQueryAdapter.QueryFactory<Flora>() {
             @Override
@@ -288,8 +440,9 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
 
                 ParseQuery<Flora> query = ParseQuery.getQuery("Flora");
 
-                query.addDescendingOrder("updatedAt");
-                query.fromLocalDatastore();
+                query.fromLocalDatastore()
+                        .orderByDescending("deviceImgName")
+                        .addDescendingOrder("updatedAt");
 
                 return query;
             }
@@ -310,13 +463,11 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
                     startActivity(intent);
 
                 } else {
-                    instaLog("obj is null");
+                    instaLog("showCurrentFlora(): obj is null");
                 }
 
             }
         });
-
-        showFloraPending = false;
     }
 
     public void initializePreferences () {
@@ -324,8 +475,10 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
         if (!preferencesInitialized) {
             SharedPreferences sharedPreferences;
 
-            sharedPreferences = this.getSharedPreferences("com.example.tracy.instaflora", Context.MODE_PRIVATE);
+            sharedPreferences = this.getSharedPreferences("com.tzlandscapedesign.instaflora", Context.MODE_PRIVATE);
             if (sharedPreferences != null) {
+
+                imagesPending = sharedPreferences.getBoolean("imagesPending", false);
                 privateOnly = sharedPreferences.getBoolean("privateOnly", false);
 
                 switch (sharedPreferences.getInt("range", RANGE_ALLFLORA)) {
@@ -350,6 +503,7 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
             }
             preferencesInitialized = true;
         }
+        instaLog("initializePreferences: imagesPending: " + imagesPending);
     }
 
     public void initializeParse() {
@@ -373,7 +527,7 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
 
     static public void instaLog(String log) {
 
-        //Log.i("instalog", log);
+        Log.i("instalog", log);
 
     }
 
@@ -394,7 +548,6 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
         if (requestCode == RESULT_FLORA_SETTINGS) {
             updateLocation();
             loadFloraData();
-            showCurrentFlora();
         } else if (requestCode == RESULT_FLORA_ADD) {
             // the newly saved item might not be done updating
             // yet which causes errors, so let the user
@@ -430,10 +583,7 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
         new Handler().postDelayed(new Runnable() {
             @Override public void run() {
                 swipeLayout.setRefreshing(false);
-                if (loadFloraPending) {
-                    loadFloraData();
-                }
-                showCurrentFlora();
+                loadFloraData();
             }
         }, 5000);
     }
